@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>实时天气数据可视化仪表盘</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h1>实时天气数据可视化仪表盘</h1>
+                <div class="subtitle">使用心知天气API提供的气象数据 | 最后更新: <span id="last-update-time">--:--:--</span></div>
+            </div>
+        </header>
+        
+        <div class="location-selector">
+            <div class="search-box">
+                <input type="text" id="city-search" placeholder="输入城市名称...">
+                <button id="search-btn"><i class="fas fa-search"></i></button>
+            </div>
+            <select id="city-select">
+                <option value="zhengzhou">郑州</option>
+                <option value="beijing">北京</option>
+                <option value="shanghai">上海</option>
+                <option value="guangzhou">广州</option>
+                <option value="shenzhen">深圳</option>
+                <option value="hangzhou">杭州</option>
+            </select>
+            <button class="btn" id="refresh-btn"><i class="fas fa-sync-alt"></i> 刷新数据</button>
+        </div>
+        
+        <div class="dashboard">
+            <div class="card current-weather-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-sun"></i> 当前天气</h2>
+                    <div class="location-display" id="location-display">郑州</div>
+                </div>
+                <div class="weather-container">
+                    <div class="current-weather">
+                        <div class="weather-icon" id="weather-icon"><i class="fas fa-cloud"></i></div>
+                        <div class="weather-text" id="weather-text">多云</div>
+                        <div class="temperature" id="temperature">25°C</div>
+                    </div>
+                    <div class="weather-info">
+                        <div class="info-item">
+                            <div class="info-label"><i class="fas fa-temperature-low"></i> 体感温度</div>
+                            <div class="info-value" id="feels-like">23°C</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label"><i class="fas fa-clock"></i> 更新时间</div>
+                            <div class="info-value" id="update-time">--:--:--</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label"><i class="fas fa-map-marker-alt"></i> 地理位置</div>
+                            <div class="info-value" id="location">郑州, 河南, 中国</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label"><i class="fas fa-globe-asia"></i> 时区</div>
+                            <div class="info-value" id="timezone">Asia/Shanghai</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card chart-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-chart-line"></i> 温度变化趋势</h2>
+                    <div class="time-range-selector">
+                        <button class="time-btn active" data-hours="24">24小时</button>
+                        <button class="time-btn" data-hours="72">72小时</button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="lineChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="card chart-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-chart-bar"></i> 五日天气预报</h2>
+                </div>
+                <div class="chart-container">
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="card info-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-info-circle"></i> 气象数据说明</h2>
+                </div>
+                <div class="info-content">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">数据来源</div>
+                            <div class="info-value">心知天气API</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">更新频率</div>
+                            <div class="info-value">每30分钟</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">温度单位</div>
+                            <div class="info-value">摄氏度 (°C)</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">可视化库</div>
+                            <div class="info-value">Chart.js 3.9.1</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">后端框架</div>
+                            <div class="info-value">Python Flask</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">部署方式</div>
+                            <div class="info-value">GitHub Actions</div>
+                        </div>
+                    </div>
+                    <div class="controls">
+                        <button class="btn" id="export-btn"><i class="fas fa-file-export"></i> 导出数据</button>
+                        <button class="btn" id="settings-btn"><i class="fas fa-cog"></i> 设置</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="error-container" class="error" style="display: none;"></div>
+        
+        <footer>
+            <div class="footer-content">
+                <p>© 2023 实时天气数据可视化仪表盘 | 数据来自心知天气API</p>
+                <p>本页面使用GitHub Actions自动部署 | 最后构建时间: {{ build_date }}</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
